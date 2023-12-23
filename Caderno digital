@@ -1,0 +1,96 @@
+import pygame
+import sys
+
+pygame.init()
+
+# Configurações da janela
+largura, altura = 800, 600
+janela = pygame.display.set_mode((largura, altura))
+pygame.display.set_caption("Folha de Caderno")
+
+# Configurações do fundo
+cor_fundo = (255, 255, 255)
+
+# Configurações da linha
+cor_linha = (0, 0, 0)
+espessura_linha = 2
+espacamento_linhas = 20
+quantidade_linhas = 30
+
+# Configurações do texto
+cor_texto = (0, 0, 0)
+tamanho_fonte = 20
+fonte_scribble = pygame.font.Font("Scribble.ttf", tamanho_fonte)
+
+# Lista para armazenar o texto de cada linha
+texto_por_linha = ['' for _ in range(quantidade_linhas)]
+
+# Variável para rastrear a linha ativa
+linha_ativa = None
+
+# Dicionário para mapear teclas especiais
+teclas_especiais = {
+    pygame.K_RETURN: '\n',
+    pygame.K_BACKSPACE: 'Backspace',
+    pygame.K_TAB: '\t',
+    pygame.K_LSHIFT: 'Shift',
+    pygame.K_RSHIFT: 'Shift',
+    pygame.K_CAPSLOCK: 'CapsLock',
+    pygame.K_ESCAPE: 'Escape',
+    pygame.K_SPACE: ' ',
+}
+
+# Dicionário para rastrear o estado das teclas
+teclas_pressionadas = {}
+
+# Função para escrever à mão
+def escrever_a_mao(texto, x, y):
+    texto_renderizado = fonte_scribble.render(texto, True, cor_texto)
+    janela.blit(texto_renderizado, (x, y))
+
+# Loop principal para aguardar eventos
+while True:
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif evento.type == pygame.KEYDOWN:
+            if linha_ativa is not None:
+                # Adiciona a tecla ao texto diretamente
+                if evento.key == pygame.K_RETURN:
+                    linha_ativa = (linha_ativa + 1) % quantidade_linhas
+                elif evento.key == pygame.K_BACKSPACE:
+                    texto_por_linha[linha_ativa] = texto_por_linha[linha_ativa][:-1]
+                else:
+                    if evento.key in teclas_especiais:
+                        texto_por_linha[linha_ativa] += teclas_especiais[evento.key]
+                    else:
+                        # Use pygame.key.name para obter o caractere correspondente à tecla
+                        texto_por_linha[linha_ativa] += pygame.key.name(evento.key)
+        elif evento.type == pygame.KEYUP:
+            if linha_ativa is not None:
+                # Remove a tecla do dicionário de teclas pressionadas
+                teclas_pressionadas[evento.key] = False
+        elif evento.type == pygame.MOUSEBUTTONDOWN:
+            # Ao clicar, determina a linha clicada
+            linha_clicada = evento.pos[1] // espacamento_linhas
+            if 0 <= linha_clicada < quantidade_linhas:
+                linha_ativa = linha_clicada
+
+    # Desenha o fundo
+    janela.fill(cor_fundo)
+
+    # Desenha as linhas horizontais
+    for i in range(quantidade_linhas):
+        y = i * espacamento_linhas
+        pygame.draw.line(janela, cor_linha, (0, y), (largura, y), espessura_linha)
+        # Exibe o texto de cada linha
+        escrever_a_mao(texto_por_linha[i], 10, y - 16)
+
+    # Destaca a linha ativa
+    if linha_ativa is not None:
+        pygame.draw.line(janela, (255, 0, 0), (0, linha_ativa * espacamento_linhas),
+                         (largura, linha_ativa * espacamento_linhas), 2)
+
+    # Atualiza a janela
+    pygame.display.flip()
